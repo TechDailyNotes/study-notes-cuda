@@ -4,93 +4,83 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-__global__ void convolve(
-    int *d_vec, int *d_msk, int *d_res,
-    int m_numElementsVec, int m_numElementsMsk
-) {
-    // Step 0: Get the thread index.
-    int g_ti = blockIdx.x * blockDim.x + threadIdx.x;
-    // if (g_ti >= m_numElementsVec) return;
+__global__ void convolve_1d(int *d_vec, int *d_msk, int *d_res, int n, int m) {
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= n) return;
 
-    // Step 1: Compute the convolved result of the current grid.
-    int sum = 0;
-    int radius = m_numElementsMsk / 2;
+    int tmp = 0;
+    int lo = tid - m / 2;
+    int hi = tid + m / 2;
 
-    for (int mi = 0; mi < m_numElementsMsk; mi++) {
-        int vi = g_ti - radius + mi;
-        if (vi >= 0 && vi < m_numElementsVec) {
-            sum += d_vec[vi] * d_msk[mi];
-        }
+    for (int i = lo; i <= hi; i++) {
+        if (i < 0 || i >= n) continue;
+        tmp += d_vec[i] * d_msk[i-lo];
     }
 
-    // Step 2: Register the result back to the vector.
-    d_res[g_ti] = sum;
+    d_res[tid] = tmp;
 }
 
-void m_init(int *m_array, int m_size) {
-    for (int i = 0; i < m_size; i++) {
-        m_array[i] = rand() % 100;
-    }
-}
+void verify_result(int *h_vec, int *h_msk, int *h_res, int n, int m) {
+    for (int i = 0; i < n; i++) {
+        int tmp = 0;
+        int lo = i - m / 2;
+        int hi = i + m / 2;
 
-void verify(
-    int *h_vec, int *h_msk, int *h_res,
-    int m_numElementsVec, int m_numElementsMsk
-) {
-    int radius = m_numElementsMsk / 2;
-
-    for (int ri = 0; ri < m_numElementsVec; ri++) {
-        int sum = 0;
-        for (int mi = 0; mi < m_numElementsMsk; mi++) {
-            int vi = ri - radius + mi;
-            if (vi >= 0 && vi < m_numElementsVec) {
-                sum += h_vec[vi] * h_msk[mi];
-            }
+        for (int j = lo; j <= hi; j++) {
+            if (j < 0 || j >= n) continue;
+            tmp += h_vec[j] * h_msk[j-lo];
         }
-        assert(sum == h_res[ri]);
+
+        if (tmp != h_res[i]) {
+            printf("Incorrect: (tmp) %d != %d\n", tmp, h_res[i]);
+        }
+        assert(tmp == h_res[i]);
     }
+
+    printf("All pass!\n");
 }
 
 int main() {
-    // Step 0: Set up parameters.
-    int m_numElementsVec = 1 << 20;
-    int m_numElementsMsk = 7;
-    size_t m_numBytesVec = sizeof(int) * m_numElementsVec;
-    size_t m_numBytesMsk = sizeof(int) * m_numElementsMsk;
+    int n = 1 << 20;
+    int m = 7;
+    int n_bytes = sizeof(int) * n;
+    int m_bytes = sizeof(int) * m;
 
-    int d_blockDimX = 1 << 8;
-    int d_gridDimX = (int) ceil(1.0 * m_numElementsVec / d_blockDimX);
-
-    // Step 1: Init memories on both cpu and gpu.
-    int *h_vec = new int[m_numElementsVec];
-    int *h_msk = new int[m_numElementsMsk];
-    int *h_res = new int[m_numElementsVec];
-    m_init(h_vec, m_numElementsVec);
-    m_init(h_msk, m_numElementsMsk);
+    int *h_vec = (int*) malloc(n_bytes);
+    int *h_msk = (int*) malloc(m_bytes);
+    int *h_res = (int*) malloc(n_bytes);
 
     int *d_vec, *d_msk, *d_res;
-    cudaMalloc(&d_vec, m_numBytesVec);
-    cudaMalloc(&d_msk, m_numBytesMsk);
-    cudaMalloc(&d_res, m_numBytesVec);
+    cudaMalloc(&d_vec, n_bytes);
+    cudaMalloc(&d_msk, m_bytes);
+    cudaMalloc(&d_res, n_bytes);
 
-    // Step 2: Launch the kernel function to convolve the vector with the mask.
-    cudaMemcpy(d_vec, h_vec, m_numElementsVec, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_msk, h_msk, m_numElementsMsk, cudaMemcpyHostToDevice);
-    convolve<<<d_gridDimX, d_blockDimX>>>(
-        d_vec, d_msk, d_res,
-        m_numElementsVec, m_numElementsMsk
-    );
-    cudaMemcpy(h_res, d_res, m_numElementsVec, cudaMemcpyDeviceToHost);
+    for (int i = 0; i < n; i++) {
+        h_vec[i] = rand() % 100;
+        h_res[i] = 0;
+    }
+    for (int i = 0; i < m; i++) {
+        h_msk[i] = rand() % 10;
+    }
 
-    verify(h_vec, h_msk, h_res, m_numElementsVec, m_numElementsMsk);
+    cudaMemcpy(d_vec, h_vec, n_bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_msk, h_msk, m_bytes, cudaMemcpyHostToDevice);
 
-    // Step 3: Clear memories.
-    delete[] h_vec;
-    delete[] h_msk;
-    delete[] h_res;
+    int num_threads = 1 << 8;
+    dim3 blck_size(num_threads);
+    dim3 grid_size((n + num_threads - 1) / num_threads);
+
+    convolve_1d<<<grid_size, blck_size>>>(d_vec, d_msk, d_res, n, m);
+    cudaMemcpy(h_res, d_res, n_bytes, cudaMemcpyDeviceToHost);
+    verify_result(h_vec, h_msk, h_res, n, m);
+
     cudaFree(d_vec);
     cudaFree(d_msk);
     cudaFree(d_res);
+
+    free(h_vec);
+    free(h_msk);
+    free(h_res);
 
     printf("Success!");
     return 0;

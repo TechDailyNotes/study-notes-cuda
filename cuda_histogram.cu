@@ -1,11 +1,11 @@
-#include 
-#include 
-#include 
-#include 
-#include 
-#include 
-#include 
-#include 
+#include <cuda_runtime.h>
+#include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 using namespace std;
 

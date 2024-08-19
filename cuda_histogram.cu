@@ -11,7 +11,7 @@ using namespace std;
 
 constexpr int NUM_CHARS = 26;
 
-ostream& operator<< (ostream& os, vector& vec) {
+ostream& operator<< (ostream& os, vector<char>& vec) {
     for (char c: vec) os << c << endl;
     return os;
 }
@@ -31,8 +31,8 @@ int main() {
     size_t byte_elements = sizeof(char) * num_elements;
     size_t byte_bins = sizeof(int) * num_bins;
 
-    vector h_elements(num_elements);
-    vector h_bins(num_bins);
+    vector<char> h_elements(num_elements);
+    vector<int> h_bins(num_bins);
 
     srand(1);
     generate(
@@ -51,7 +51,7 @@ int main() {
     int num_threads = 1 << 8;
     dim3 size_block(num_threads);
     dim3 size_grid((num_elements + num_threads - 1) / num_threads);
-    histogram<<>>(d_elements, d_bins, num_elements, num_bins);
+    histogram<<<size_grid, size_block>>>(d_elements, d_bins, num_elements, num_bins);
 
     cudaMemcpy(h_bins.data(), d_bins, byte_bins, cudaMemcpyDeviceToHost);
     assert(num_elements == accumulate(begin(h_bins), end(h_bins), 0));
@@ -67,6 +67,6 @@ int main() {
     cudaFree(d_bins);
 
     cout << "Success!" << endl;
-
+            
     return 0;
 }

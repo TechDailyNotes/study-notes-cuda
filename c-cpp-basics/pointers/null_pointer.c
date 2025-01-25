@@ -18,4 +18,6 @@ int main() {
     assert(ptr == NULL);
     printf("ptr == NULL\n");
     printf("ptr = %p\n", (void*) ptr);  // ptr = (nil)
+
+    return 0;
 }

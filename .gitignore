@@ -1,3 +1,18 @@
+*.run
+
+# Created by https://www.toptal.com/developers/gitignore/api/cuda
+# Edit at https://www.toptal.com/developers/gitignore?templates=cuda
+
+### CUDA ###
+*.i
+*.ii
+*.gpu
+*.ptx
+*.cubin
+*.fatbin
+
+# End of https://www.toptal.com/developers/gitignore/api/cuda
+
 # Created by https://www.toptal.com/developers/gitignore/api/macos,vs,cuda,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,vs,cuda,c++
 

@@ -32,3 +32,11 @@ export arch_ext=amd64
 ### Step 2: Install Driver
 
 [Official Tutorial for Ubuntu](https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/index.html#ubuntu)
+
+## Use AWS EC2
+
+Deep Learning OSS Nvidia Driver AMI only supports the following instances.
+
+```shell
+Supported EC2 instances: G4dn, G5, G6, Gr6, G6e, P4, P4de, P5, P5e
+```

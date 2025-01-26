@@ -1,5 +1,6 @@
 # CUDA Installation
 
+[Official Tutorial](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
 [Official Tutorial for Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
 
 ## Check Hardware

@@ -18,13 +18,14 @@ The following tutorial uses Linux Ubuntu 22.04 LTS as an example.e
 
 ### Step 1: Set Environment Variables
 
-Set up `version`, `distro`, `arch` based on your machine specifications and the [driver version](https://www.nvidia.com/en-us/drivers/).
+Set up `version`, `distro`, `arch`, `arch_ext` based on your machine specifications and the [driver version](https://www.nvidia.com/en-us/drivers/).
 
 ```shell
 # Get the target driver version based on the GPU version.
 export version=550.144.03
 export distro=ubuntu2204
 export arch=x86_64
+export arch_ext=amd64
 ```
 
 ### Step 2: Install Driver

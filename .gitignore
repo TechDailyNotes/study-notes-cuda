@@ -1,4 +1,5 @@
 *.run
+*.run.1
 
 # Created by https://www.toptal.com/developers/gitignore/api/cuda
 # Edit at https://www.toptal.com/developers/gitignore?templates=cuda

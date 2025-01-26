@@ -1,4 +1,4 @@
-# NVCC Compiler
+# CUDA Compiler
 
 ## Compile and Link a CUDA Program
 

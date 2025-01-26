@@ -1,4 +1,4 @@
-# CPP Compiler
+# C++ Compiler
 
 ## Compile and Link a CPP Program
 

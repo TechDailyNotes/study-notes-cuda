@@ -1,4 +1,4 @@
-.PHONY: c c_exec c_obj c_obj_exec cpp cpp_exec cuda cuda_exec clean
+.PHONY: c c_exec c_obj c_obj_exec cpp cpp_exec cuda cuda_exec java python clean
 
 # Compilers
 GCC = gcc
@@ -37,5 +37,12 @@ cuda:
 cuda_exec: cuda
 	@./$(CUDA_OUT)
 
+java:
+	@javac Java.java
+	@java Java
+
+python:
+	@python python.py
+
 clean:
-	rm -f $(C_OUT) $(C_OBJ) $(CPP_OUT) $(CUDA_OUT)
+	rm -f $(C_OUT) $(C_OBJ) $(CPP_OUT) $(CUDA_OUT) *.class

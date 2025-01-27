@@ -1,4 +1,4 @@
-# Indexing Template
+# `indexing` Template
 
 ```cpp
 __global__ void kernel(void) {}

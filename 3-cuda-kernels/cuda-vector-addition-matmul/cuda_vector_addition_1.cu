@@ -13,20 +13,22 @@ void vector_add_cpu(float *a, float *b, float *c, int n) {
 }
 
 __global__ void vector_add_gpu(float *a, float *b, float *c, int n) {
+    // Step 0: Compute thread id.
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Step 1: Bound check.
     if (i < n) {
+        // Step 2: Execute logic.
         c[i] = a[i] + b[i];
     }
 }
 
-// Initialize vector with random values
 void init_vector(float *vec, int n) {
     for (int i = 0; i < n; i++) {
-        vec[i] = (float)rand() / RAND_MAX;
+        vec[i] = (float) rand() / RAND_MAX;
     }
 }
 
-// Function to measure execution time
 double get_time() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -34,36 +36,31 @@ double get_time() {
 }
 
 int main() {
-    float *h_a, *h_b, *h_c_cpu, *h_c_gpu;
-    float *d_a, *d_b, *d_c;
+    // Step 0: Compute memory and thread size.
     size_t size = N * sizeof(float);
+    int num_blocks = (N + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    // Allocate host memory
-    h_a = (float*)malloc(size);
-    h_b = (float*)malloc(size);
-    h_c_cpu = (float*)malloc(size);
-    h_c_gpu = (float*)malloc(size);
+    // Step 1: Initialize memory.
+    float *h_a, *h_b, *h_c_cpu, *h_c_gpu;
+    h_a = (float*) malloc(size);
+    h_b = (float*) malloc(size);
+    h_c_cpu = (float*) malloc(size);
+    h_c_gpu = (float*) malloc(size);
 
-    // Initialize vectors
-    srand(time(NULL));
-    init_vector(h_a, N);
-    init_vector(h_b, N);
-
-    // Allocate device memory
+    float *d_a, *d_b, *d_c;
     cudaMalloc(&d_a, size);
     cudaMalloc(&d_b, size);
     cudaMalloc(&d_c, size);
 
-    // Copy data to device
+    srand(time(NULL));
+    init_vector(h_a, N);
+    init_vector(h_b, N);
+
+    // Step 2: Move data from host to device.
     cudaMemcpy(d_a, h_a, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, h_b, size, cudaMemcpyHostToDevice);
 
-    // Define grid and block dimensions
-    int num_blocks = (N + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    // N = 1024, BLOCK_SIZE = 256, num_blocks = 4
-    // (N + BLOCK_SIZE - 1) / BLOCK_SIZE = ( (1025 + 256 - 1) / 256 ) = 1280 / 256 = 4 rounded 
-
-    // Warm-up runs
+    // Step 3: Call device kernel.
     printf("Performing warm-up runs...\n");
     for (int i = 0; i < 3; i++) {
         vector_add_cpu(h_a, h_b, h_c_cpu, N);
@@ -71,7 +68,6 @@ int main() {
         cudaDeviceSynchronize();
     }
 
-    // Benchmark CPU implementation
     printf("Benchmarking CPU implementation...\n");
     double cpu_total_time = 0.0;
     for (int i = 0; i < 20; i++) {
@@ -82,7 +78,6 @@ int main() {
     }
     double cpu_avg_time = cpu_total_time / 20.0;
 
-    // Benchmark GPU implementation
     printf("Benchmarking GPU implementation...\n");
     double gpu_total_time = 0.0;
     for (int i = 0; i < 20; i++) {
@@ -94,13 +89,13 @@ int main() {
     }
     double gpu_avg_time = gpu_total_time / 20.0;
 
-    // Print results
     printf("CPU average time: %f milliseconds\n", cpu_avg_time*1000);
     printf("GPU average time: %f milliseconds\n", gpu_avg_time*1000);
     printf("Speedup: %fx\n", cpu_avg_time / gpu_avg_time);
 
-    // Verify results (optional)
+    // Step 4: Move data from device to host.
     cudaMemcpy(h_c_gpu, d_c, size, cudaMemcpyDeviceToHost);
+
     bool correct = true;
     for (int i = 0; i < N; i++) {
         if (fabs(h_c_cpu[i] - h_c_gpu[i]) > 1e-5) {
@@ -110,14 +105,14 @@ int main() {
     }
     printf("Results are %s\n", correct ? "correct" : "incorrect");
 
-    // Free memory
+    // Step 5: Free memory.
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
     free(h_a);
     free(h_b);
     free(h_c_cpu);
     free(h_c_gpu);
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_c);
 
     return 0;
 }

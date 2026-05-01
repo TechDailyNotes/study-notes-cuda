@@ -1,4 +1,4 @@
-// Latency: 299.64 ms
+// T4 Latency: 299.64 ms
 
 #include <cuda_runtime.h>
 
